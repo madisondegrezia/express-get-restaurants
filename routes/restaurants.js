@@ -3,6 +3,7 @@ const { Router } = require("express");
 const restaurantRouter = Router();
 const Restaurant = require("../models/index");
 const db = require("../db/connection");
+const { check, validationResult } = require("express-validator");
 
 restaurantRouter.use(express.json());
 restaurantRouter.use(express.urlencoded({ extended: true }));
@@ -16,13 +17,45 @@ restaurantRouter.get("/", async (req, res) => {
 // get restaurant by specific id
 restaurantRouter.get("/:id", async (req, res) => {
   const restaurant = await Restaurant.findByPk(req.params.id);
-  res.json(restaurant);
+  if (restaurant) {
+    res.json(restaurant);
+  } else {
+    res.status(404).json({ error: "Restaurant not found" });
+  }
 });
 
-restaurantRouter.post("/", async (req, res) => {
-  const newRestaurant = await Restaurant.create(req.body);
-  res.status(201).json(newRestaurant);
-});
+restaurantRouter.post(
+  "/",
+  [
+    check("name").not().isEmpty().trim().withMessage("Name cannot be empty"),
+    check("location")
+      .not()
+      .isEmpty()
+      .trim()
+      .withMessage("Location cannot be empty"),
+    check("cuisine")
+      .not()
+      .isEmpty()
+      .trim()
+      .withMessage("Cuisine cannot be empty"),
+  ],
+  async (req, res, next) => {
+    try {
+      // Extracts errors from check()
+      const errors = validationResult(req);
+      // If there are any errors, return the errors in the response
+      if (!errors.isEmpty()) {
+        res.status(400).json({ error: errors.array() });
+      } else {
+        // No error? Run the POST request
+        const newRestaurant = await Restaurant.create(req.body);
+        res.status(201).json(newRestaurant);
+      }
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 restaurantRouter.put("/:id", async (req, res) => {
   const updatedRestaurant = await Restaurant.update(req.body, {

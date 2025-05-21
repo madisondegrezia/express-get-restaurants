@@ -62,6 +62,32 @@ test("should create a new restaurant", async () => {
   expect(response.body.name).toEqual("Angelina's Kitchen");
 });
 
+test("POST /restaurants returns validation errors", async () => {
+  const response = await request(app).post("/restaurants").send({});
+  expect(response.status).toBe(400);
+
+  // check if array
+  expect(Array.isArray(response.body.error)).toBe(true);
+
+  const errorFields = response.body.error.map((e) => e.path);
+
+  expect(errorFields).toEqual(
+    expect.arrayContaining(["name", "location", "cuisine"])
+  );
+
+  const nameError = response.body.error.find((e) => e.path === "name");
+  expect(nameError).toBeDefined();
+  expect(nameError.msg).toBe("Name cannot be empty");
+
+  const locationError = response.body.error.find((e) => e.path === "location");
+  expect(locationError).toBeDefined();
+  expect(locationError.msg).toBe("Location cannot be empty");
+
+  const cuisineError = response.body.error.find((e) => e.path === "cuisine");
+  expect(cuisineError).toBeDefined();
+  expect(cuisineError.msg).toBe("Cuisine cannot be empty");
+});
+
 test("should update a restaurant", async () => {
   await request(app).put("/restaurants/1").send({
     name: "Cecconi's",
