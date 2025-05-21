@@ -1,6 +1,5 @@
 const express = require("express");
-const { Router } = require("express");
-const restaurantRouter = Router();
+const restaurantRouter = express.Router();
 const Restaurant = require("../models/index");
 const db = require("../db/connection");
 const { check, validationResult } = require("express-validator");
